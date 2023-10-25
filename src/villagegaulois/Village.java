@@ -2,6 +2,7 @@ package villagegaulois;
 
 import personnages.Chef;
 import personnages.Gaulois;
+import villagegaulois.Village.VillageSansChefException;
 
 public class Village {
 	private String nom;
@@ -44,7 +45,10 @@ public class Village {
 		return null;
 	}
 
-	public String afficherVillageois() {
+	public String afficherVillageois() throws VillageSansChefException {
+		if (chef == null) {
+			throw new VillageSansChefException();
+		}
 		StringBuilder chaine = new StringBuilder();
 		if (nbVillageois < 1) {
 			chaine.append("Il n'y a encore aucun habitant au village du chef " + chef.getNom() + ".\n");
@@ -80,12 +84,35 @@ public class Village {
 	public String rechercherVendeursProduit(String produit) {
 		Etal[] etalsAvecProduit = marche.trouverEtals(produit);
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < etalsAvecProduit.length; i++) {
-			continue;
+		if (etalsAvecProduit.length > 0) {
+			sb.append(String.format("Les vendeurs qui proposent des %s sont :%n", produit));
+			for (int i = 0; i < etalsAvecProduit.length; i++) {
+				sb.append(String.format("- %s %n", etalsAvecProduit[i].getVendeur().getNom()));
+			}
+		} else {
+			sb.append(String.format("Pas de vendeur qui propose des %s.%n", produit));
 		}
 		return sb.toString();
 	}
+	
+	public Etal rechercherEtal(Gaulois vendeur) {
+		return marche.trouverVendeur(vendeur);
+	}
 
+	public String partirVendeur(Gaulois vendeur) {
+		return rechercherEtal(vendeur).libererEtal();
+	}
+	
+	public String afficherMarche() {
+		StringBuilder sb = new StringBuilder();
+		if (marche.etals.length > 0) {
+			sb.append(String.format("le marché du village \"%s\" possède plusieurs étals :%n", getNom()));
+		} else {
+			sb.append(String.format("le marché du village \"%s\" ne possède aucune étal.%n", getNom()));
+		}
+		return sb.toString() + marche.afficherMarche();
+	}
+	
 	private static class Marche {
 		private Etal[] etals;
 
@@ -137,17 +164,31 @@ public class Village {
 			return null;
 		}
 
-		private void afficherMarche() {
+		private String afficherMarche() {
+			StringBuilder sb = new StringBuilder();
 			int etalsVides = 0;
 			for (int i = 0; i < etals.length; i++) {
 				if (etals[i].isEtalOccupe()) {
-					etals[i].afficherEtal();
+					sb.append(etals[i].afficherEtal());
 				} else {
 					etalsVides++;
 				}
 			}
-			System.out.println("Il reste " + etalsVides + " étals non utilisés dans le marché.\n");
+
+			sb.append(String.format("Il reste %d étals non utilisés dans le marché.%n", etalsVides));
+			return sb.toString();
 		}
+	}
+	
+	public class VillageSansChefException extends Exception {
+		private static final long serialVersionUID = 1L;
+		private static String errorMessage = "Le village est obligé de posséder un chef.\n";
+
+		public VillageSansChefException() {
+	        super(errorMessage);
+	    }
+
+
 	}
 
 }
